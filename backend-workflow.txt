@@ -1,0 +1,67 @@
+                                              Backend Architecture
+                                              
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                   API Gateway                                                     │
+│                                          (Load Balancer / Rate Limiter)                                          │
+└─────────────────────────┬───────────────────────────┬───────────────────────────┬───────────────────────────────┘
+                          │                           │                           │
+                          ▼                           ▼                           ▼
+                  ┌───────────────┐           ┌───────────────┐           ┌───────────────┐
+                  │     Auth      │           │   WebSocket   │           │   REST API    │
+                  │   Service     │           │    Server     │           │   Endpoints   │
+                  └───────┬───────┘           └───────┬───────┘           └───────┬───────┘
+                          │                           │                           │
+        ┌─────────────────┴─────────────────┬────────┴────────┬─────────────────┴─────────────────┐
+        │                                   │                 │                                   │
+        ▼                                   ▼                 ▼                                   ▼
+┌───────────────┐                  ┌───────────────┐ ┌───────────────┐                  ┌───────────────┐
+│  User Login   │                  │   Message     │ │  Real-time    │                  │   Message     │
+│   /register   │                  │   Service     │ │  Streaming    │                  │   History     │
+│  /login       │                  │               │ │   Service     │                  │   Service     │
+│  /logout      │                  │  POST/GET     │ │               │                  │               │
+│  /refresh     │                  │  messages     │ │  WebSocket    │                  │  GET /history │
+└───────┬───────┘                  └───────┬───────┘ └───────┬───────┘                  └───────┬───────┘
+        │                                   │                 │                                   │
+        │                          ┌────────┴─────────────────┴────────┐                         │
+        │                          │                                   │                         │
+        ▼                          ▼                                   ▼                         ▼
+┌───────────────────────┐  ┌───────────────────────┐        ┌───────────────────────┐  ┌───────────────┐
+│    User Database      │  │   Message Database    │        │    Message Queue      │  │     Redis     │
+│    (PostgreSQL)       │  │    (PostgreSQL)       │        │   (RabbitMQ/Kafka)   │  │     Cache     │
+│                       │  │                       │        │                       │  │               │
+│ • users              │  │ • messages            │        │ • message.created     │  │ • sessions    │
+│ • user_sessions      │  │ • conversations       │        │ • message.delivered   │  │ • user_status │
+│ • user_preferences   │  │ • user_conversations  │        │ • user.typing         │  │ • temp_data   │
+│ • oauth_tokens       │  │ • message_status      │        │ • user.online         │  │               │
+└───────────────────────┘  └───────────────────────┘        └───────────┬───────────┘  └───────────────┘
+                                                                         │
+                                                                         ▼
+                                                            ┌────────────────────────┐
+                                                            │  Background Workers    │
+                                                            │                        │
+                                                            │ • Message processor    │
+                                                            │ • Notification sender  │
+                                                            │ • Analytics collector  │
+                                                            │ • File processor       │
+                                                            └────────────┬───────────┘
+                                                                         │
+                                ┌────────────────────────────────────────┴────────────────────────────────┐
+                                │                                                                         │
+                                ▼                                                                         ▼
+                    ┌───────────────────────┐                                           ┌─────────────────────────┐
+                    │  Notification Service │                                           │   File Storage Service  │
+                    │                       │                                           │                         │
+                    │ • Push notifications  │                                           │ • Upload to S3          │
+                    │ • Email (SendGrid)    │                                           │ • Image processing      │
+                    │ • SMS (Twilio)        │                                           │ • Generate thumbnails   │
+                    │ • In-app notifications│                                           │ • CDN distribution      │
+                    └───────────────────────┘                                           └─────────────────────────┘
+                    
+                                                    ┌───────────────────────┐
+                                                    │   Monitoring Layer    │
+                                                    │                       │
+                                                    │ • Application logs    │
+                                                    │ • Error tracking      │
+                                                    │ • Performance metrics │
+                                                    │ • Health checks       │
+                                                    └───────────────────────┘

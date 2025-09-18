@@ -1,0 +1,164 @@
+                                        Authentication & Authorization Flow
+
+┌─────────────┐                                                                              ┌─────────────────┐
+│   Client    │                                                                              │   Auth Service  │
+│  (Frontend) │                                                                              │    (Backend)    │
+└──────┬──────┘                                                                              └────────┬────────┘
+       │                                                                                              │
+       │  1. POST /auth/register                                                                      │
+       │  {username, email, password}                                                                 │
+       ├─────────────────────────────────────────────────────────────────────────────────────────────►│
+       │                                                                                              │
+       │                                                                   ┌──────────────────────────┼──────┐
+       │                                                                   │  Validate input data     │      │
+       │                                                                   │  Check email uniqueness  │      │
+       │                                                                   │  Hash password (bcrypt)  │      │
+       │                                                                   └──────────────────────────┼──────┘
+       │                                                                                              │
+       │                                                                                              ▼
+       │                                                                                    ┌─────────────────┐
+       │                                                                                    │   PostgreSQL    │
+       │                                                                                    │    Database     │
+       │                                                                                    │                 │
+       │                                                                                    │  INSERT INTO    │
+       │                                                                                    │  users table    │
+       │                                                                                    └─────────┬───────┘
+       │                                                                                              │
+       │                                                                   ┌──────────────────────────┼──────┐
+       │                                                                   │  Generate JWT token      │      │
+       │                                                                   │  Generate refresh token  │      │
+       │                                                                   │  Store session in Redis  │      │
+       │                                                                   └──────────────────────────┼──────┘
+       │                                                                                              │
+       │  2. Response: {user, token, refreshToken}                                                    │
+       │◄─────────────────────────────────────────────────────────────────────────────────────────────┤
+       │                                                                                              │
+       │  3. Store tokens in secure storage                                                           │
+       ├──────┐                                                                                       │
+       │      │                                                                                       │
+       │◄─────┘                                                                                       │
+       │                                                                                              │
+       │  4. Include JWT in Authorization header                                                      │
+       │  Authorization: Bearer {token}                                                               │
+       ├─────────────────────────────────────────────────────────────────────────────────────────────►│
+       │                                                                                              │
+       │                                                                   ┌──────────────────────────┼──────┐
+       │                                                                   │  Verify JWT signature    │      │
+       │                                                                   │  Check token expiration  │      │
+       │                                                                   │  Extract user claims     │      │
+       │                                                                   └──────────────────────────┼──────┘
+       │                                                                                              │
+       │                                                                                              ▼
+       │                                                                                    ┌─────────────────┐
+       │                                                                                    │   Redis Cache   │
+       │                                                                                    │                 │
+       │                                                                                    │  Check session  │
+       │                                                                                    │  validity       │
+       │                                                                                    └─────────┬───────┘
+       │                                                                                              │
+       │  5. Authorized response or 401 Unauthorized                                                  │
+       │◄─────────────────────────────────────────────────────────────────────────────────────────────┤
+       │                                                                                              │
+       │                                                                                              │
+       │  6. POST /auth/refresh (when token expires)                                                 │
+       │  {refreshToken}                                                                              │
+       ├─────────────────────────────────────────────────────────────────────────────────────────────►│
+       │                                                                                              │
+       │                                                                   ┌──────────────────────────┼──────┐
+       │                                                                   │  Validate refresh token  │      │
+       │                                                                   │  Check against database  │      │
+       │                                                                   │  Generate new JWT        │      │
+       │                                                                   │  Rotate refresh token    │      │
+       │                                                                   └──────────────────────────┼──────┘
+       │                                                                                              │
+       │  7. New tokens: {token, refreshToken}                                                        │
+       │◄─────────────────────────────────────────────────────────────────────────────────────────────┤
+       │                                                                                              │
+
+
+                                            OAuth2 Flow (Google/GitHub)
+
+┌─────────────┐                          ┌─────────────────┐                          ┌─────────────────┐
+│   Client    │                          │  OAuth Provider │                          │   Auth Service  │
+└──────┬──────┘                          └────────┬────────┘                          └────────┬────────┘
+       │                                          │                                             │
+       │  1. Redirect to OAuth provider           │                                             │
+       ├─────────────────────────────────────────►│                                             │
+       │                                          │                                             │
+       │  2. User authorizes application          │                                             │
+       │◄─────────────────────────────────────────┤                                             │
+       │                                          │                                             │
+       │  3. Redirect with authorization code     │                                             │
+       ├──────────────────────────────────────────┼─────────────────────────────────────────────►│
+       │                                          │                                             │
+       │                                          │  4. Exchange code for access token          │
+       │                                          │◄─────────────────────────────────────────────┤
+       │                                          │                                             │
+       │                                          │  5. Return access token                     │
+       │                                          ├─────────────────────────────────────────────►│
+       │                                          │                                             │
+       │                                          │                           ┌─────────────────┼──────┐
+       │                                          │                           │ Get user info   │      │
+       │                                          │                           │ Create/update   │      │
+       │                                          │                           │ user in DB      │      │
+       │                                          │                           │ Generate JWT    │      │
+       │                                          │                           └─────────────────┼──────┘
+       │                                          │                                             │
+       │  6. Return JWT and user data             │                                             │
+       │◄─────────────────────────────────────────┼─────────────────────────────────────────────┤
+       │                                          │                                             │
+
+
+                                            Permission & Role Management
+
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                              Middleware Stack                                              │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                           │
+│  1. Authentication Middleware                                                                             │
+│     - Verify JWT token                                                                                   │
+│     - Extract user ID from token                                                                         │
+│     - Attach user to request context                                                                     │
+│                                                                                                           │
+│  2. Authorization Middleware                                                                              │
+│     - Check user permissions                                                                              │
+│     - Verify resource ownership                                                                           │
+│     - Apply role-based access control (RBAC)                                                            │
+│                                                                                                           │
+│  3. Rate Limiting Middleware                                                                              │
+│     - Track requests per user/IP                                                                         │
+│     - Apply rate limits based on user tier                                                              │
+│     - Return 429 if limit exceeded                                                                       │
+│                                                                                                           │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+                                            Security Measures
+
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                                           │
+│  Token Security:                                                                                          │
+│  • JWT expires in 15 minutes                                                                             │
+│  • Refresh token expires in 7 days                                                                       │
+│  • Tokens are signed with RS256                                                                          │
+│  • Refresh tokens are rotated on use                                                                     │
+│                                                                                                           │
+│  Password Security:                                                                                       │
+│  • Minimum 8 characters, uppercase, lowercase, number                                                    │
+│  • Hashed with bcrypt (10 rounds)                                                                        │
+│  • Password reset tokens expire in 1 hour                                                                │
+│                                                                                                           │
+│  Session Management:                                                                                      │
+│  • Sessions stored in Redis                                                                              │
+│  • Device fingerprinting for suspicious activity                                                         │
+│  • Concurrent session limits                                                                             │
+│  • Session invalidation on logout                                                                        │
+│                                                                                                           │
+│  Additional Security:                                                                                     │
+│  • CSRF protection                                                                                       │
+│  • XSS prevention                                                                                        │
+│  • SQL injection prevention                                                                              │
+│  • Rate limiting per endpoint                                                                            │
+│  • IP-based blocking for suspicious activity                                                             │
+│                                                                                                           │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────┘
