@@ -12,12 +12,11 @@ OPENAI_MODEL=gpt-4o
 # Azure Dynamic Sessions (Required for Excel processing)
 AZURE_POOL_MANAGEMENT_ENDPOINT=your_azure_pool_management_endpoint_here
 
-# Database Configuration (MySQL)
-db_name=your_database_name
-db_username=your_database_username
-db_password=your_database_password
-db_host=your_database_host
-db_port=3306
+# Database Configuration (SQL Server 2022 Express)
+db_uri=mssql+pyodbc://localhost/YourDatabaseName?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes
+
+# Alternative SQL Server connection with username/password:
+# db_uri=mssql+pyodbc://username:password@localhost\\SQLEXPRESS/YourDatabaseName?driver=ODBC+Driver+17+for+SQL+Server
 
 # Frontend Configuration (optional)
 NEXT_PUBLIC_API_URL=http://localhost:8000
@@ -65,7 +64,7 @@ npm run dev
 - Backend: Ensure all Python dependencies are installed via `pip install -r requirements.txt` or `uv sync`
 
 ### Database Connection
-The chatbot requires a MySQL database connection. Ensure your database is running and accessible with the credentials in your `.env` file.
+The chatbot requires a SQL Server 2022 Express database connection. Ensure your database is running and accessible with the connection string in your `.env` file.
 
 ### Excel Processing Setup
 The spreadsheet analysis feature requires Azure Dynamic Sessions:
