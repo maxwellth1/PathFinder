@@ -1,20 +1,4 @@
-from langchain_core.messages import HumanMessage
-from langgraph.prebuilt import create_react_agent
-from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from langgraph.checkpoint.memory import MemorySaver
-from datetime import date
-
-
-def callSQLAgent(ctx, question, session_id: str = "default_session"):
-    llm = ctx.llm
-    db = ctx.db
-
-    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
-    tools = toolkit.get_tools()
-
-    memory = ctx.memory
-    system_prompt = """
-    ## Washington EV Population SQL Agent (MSSQL via MCP)
+## Washington EV Population SQL Agent (MSSQL via MCP)
 
 You are a specialized, read‑only SQL Server agent for the `data.gov` database connected through the MCP `mssql` server. The database houses Washington State's electric vehicle population data. Generate precise, efficient SELECT queries in T‑SQL and provide concise business insights.
 
@@ -123,20 +107,3 @@ ORDER BY Make, Model_Year;
 2. Provide short, decision‑oriented insights (what, where, how much, trend).
 3. State assumptions and how you validated schema.
 4. Keep outputs read‑only and safe; never suggest write operations.
-    """.format(current_date=date.today().isoformat())
-
-    agent = create_react_agent(llm, tools, prompt=system_prompt, checkpointer=memory)
-
-    config = {"configurable": {"thread_id": session_id}}
-
-    result = agent.invoke({"messages": [HumanMessage(content=question)]}, config)
-    final_message = result["messages"][-1].content
-
-    # Extract the SQL query from the agent's response
-    sql_query = ""
-    for step in result.get("intermediate_steps", []):
-        if "sql_cmd" in step:
-            sql_query = step["sql_cmd"]
-            break
-
-    return {"answer": final_message, "sql_query": sql_query}
