@@ -33,7 +33,7 @@ python dev-start.py
 
 1. **Terminal 1 - Backend:**
    ```bash
-   cd src
+   In root directory
    python -m uvicorn src.api:app --host 127.0.0.1 --port 8000 --reload
    ```
 
