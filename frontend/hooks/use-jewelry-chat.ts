@@ -28,6 +28,7 @@ export interface UseChatReturn {
   activeSessionId: string | null
   startNewSession: () => void
   switchSession: (id: string) => void
+  deleteSession: (id: string) => void
 }
 
 interface ChatSession {
@@ -333,6 +334,62 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
     }
   }, [])
 
+  const deleteSession = useCallback((id: string) => {
+    try {
+      // Remove messages for the session
+      localStorage.removeItem(messagesKeyFor(id))
+    } catch {}
+
+    let newActiveId: string | null = null
+
+    setSessions(prev => {
+      const filtered = prev.filter(s => s.id !== id)
+
+      if (id === sessionId) {
+        if (filtered.length > 0) {
+          newActiveId = filtered[0].id
+        } else {
+          const now = new Date().toISOString()
+          const generatedId = crypto.randomUUID()
+          newActiveId = generatedId
+          const initial: ChatSession = { id: generatedId, title: 'New Chat', createdAt: now, updatedAt: now }
+          const next = [initial]
+          try {
+            localStorage.setItem(SESSIONS_KEY, JSON.stringify(next))
+          } catch {}
+          return next
+        }
+      }
+
+      try {
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(filtered))
+      } catch {}
+
+      return filtered
+    })
+
+    // If the active session was deleted, move to a new/next session
+    if (id === sessionId) {
+      if (newActiveId) {
+        setSessionId(newActiveId)
+        try {
+          localStorage.setItem(ACTIVE_SESSION_KEY, newActiveId)
+          const raw = localStorage.getItem(messagesKeyFor(newActiveId))
+          setMessages(raw ? JSON.parse(raw) : [])
+        } catch {
+          setMessages([])
+        }
+      } else {
+        // Fallback: ensure state is consistent
+        setSessionId(null)
+        try {
+          localStorage.removeItem(ACTIVE_SESSION_KEY)
+        } catch {}
+        setMessages([])
+      }
+    }
+  }, [sessionId])
+
   return {
     messages,
     input,
@@ -344,6 +401,7 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
     sessions,
     activeSessionId: sessionId,
     startNewSession,
-    switchSession
+    switchSession,
+    deleteSession
   }
 } 

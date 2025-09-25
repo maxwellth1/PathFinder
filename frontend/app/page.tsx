@@ -28,6 +28,7 @@ import {
   FileSpreadsheet,
   Database,
   Clipboard,
+  Trash2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ChatMessage } from "@/hooks/use-jewelry-chat"
@@ -56,7 +57,7 @@ const navItems = [
 
 export default function ChatPage() {
   const [showQuery, setShowQuery] = useState(false)
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, clearMessages, sessions, activeSessionId, startNewSession, switchSession } = useJewelryChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, clearMessages, sessions, activeSessionId, startNewSession, switchSession, deleteSession } = useJewelryChat({
     streaming: true // Enable streaming for token-by-token responses
   })
   
@@ -242,13 +243,24 @@ export default function ChatPage() {
             <div className="text-sm text-white/70 mb-2">Chats</div>
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {sessions.map((s) => (
-                <Button
-                  key={s.id}
-                  className={cn("w-full justify-start rounded-lg", s.id === activeSessionId ? "bg-emerald-600 hover:bg-emerald-700" : "bg-gray-700/60 hover:bg-gray-700")}
-                  onClick={() => switchSession(s.id)}
-                >
-                  <span className="truncate">{s.title || 'New Chat'}</span>
-                </Button>
+                <div key={s.id} className="group relative">
+                  <Button
+                    className={cn("w-full justify-start rounded-lg pr-10", s.id === activeSessionId ? "bg-emerald-600 hover:bg-emerald-700" : "bg-gray-700/60 hover:bg-gray-700")}
+                    onClick={() => switchSession(s.id)}
+                  >
+                    <span className="truncate">{s.title || 'New Chat'}</span>
+                  </Button>
+                  <button
+                    aria-label="Delete chat"
+                    className={cn(
+                      "absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center justify-center w-6 h-6 rounded-md text-white/70",
+                      s.id === activeSessionId ? "hover:text-white" : "hover:text-white"
+                    )}
+                    onClick={(e) => { e.stopPropagation(); deleteSession(s.id) }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               ))}
               {sessions.length === 0 && (
                 <div className="text-xs text-white/60">No chats yet</div>
