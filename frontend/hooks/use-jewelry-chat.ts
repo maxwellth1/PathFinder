@@ -23,6 +23,18 @@ export interface UseChatReturn {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleSubmit: (e: React.FormEvent) => Promise<void>
   clearMessages: () => void
+  // Session management
+  sessions: ChatSession[]
+  activeSessionId: string | null
+  startNewSession: () => void
+  switchSession: (id: string) => void
+}
+
+interface ChatSession {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
 }
 
 // Function to format streaming content in real-time
@@ -60,13 +72,50 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessions, setSessions] = useState<ChatSession[]>([])
+
+  const SESSIONS_KEY = 'pf_sessions'
+  const ACTIVE_SESSION_KEY = 'pf_active_session'
+  const messagesKeyFor = (id: string) => `pf_messages_${id}`
 
   // Generate a session ID when the component mounts
   useEffect(() => {
-    if (!sessionId) {
-      setSessionId(crypto.randomUUID());
-    }
-  }, [sessionId]);
+    try {
+      const storedSessions = localStorage.getItem(SESSIONS_KEY)
+      if (storedSessions) {
+        setSessions(JSON.parse(storedSessions))
+      }
+      const storedActive = localStorage.getItem(ACTIVE_SESSION_KEY)
+      if (storedActive) {
+        setSessionId(storedActive)
+        const raw = localStorage.getItem(messagesKeyFor(storedActive))
+        if (raw) {
+          setMessages(JSON.parse(raw))
+        }
+      } else {
+        const newId = crypto.randomUUID()
+        setSessionId(newId)
+        localStorage.setItem(ACTIVE_SESSION_KEY, newId)
+        // Seed a placeholder session so it appears in sidebar
+        const now = new Date().toISOString()
+        const initial: ChatSession = { id: newId, title: 'New Chat', createdAt: now, updatedAt: now }
+        setSessions(prev => {
+          const next = [initial, ...prev]
+          localStorage.setItem(SESSIONS_KEY, JSON.stringify(next))
+          return next
+        })
+      }
+    } catch {}
+  }, [])
+
+  // Persist messages when they change
+  useEffect(() => {
+    try {
+      if (sessionId) {
+        localStorage.setItem(messagesKeyFor(sessionId), JSON.stringify(messages))
+      }
+    } catch {}
+  }, [messages, sessionId])
 
   const generateMessageId = () => {
     return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -97,6 +146,30 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
     setInput('')
     setIsLoading(true)
     setError(null)
+
+    // Ensure session metadata exists and is updated
+    try {
+      if (sessionId) {
+        setSessions(prev => {
+          const now = new Date().toISOString()
+          const exists = prev.find(s => s.id === sessionId)
+          let next: ChatSession[]
+          if (exists) {
+            const updated = prev.map(s => s.id === sessionId ? {
+              ...s,
+              title: s.title === 'New Chat' ? userMessage.content.slice(0, 60) : s.title,
+              updatedAt: now
+            } : s)
+            next = updated
+          } else {
+            next = [{ id: sessionId, title: userMessage.content.slice(0, 60), createdAt: now, updatedAt: now }, ...prev]
+          }
+          localStorage.setItem(SESSIONS_KEY, JSON.stringify(next))
+          localStorage.setItem(ACTIVE_SESSION_KEY, sessionId)
+          return next
+        })
+      }
+    } catch {}
 
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -159,9 +232,9 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
                     // Apply real-time formatting to the streaming content
                     const formattedContent = formatStreamingContent(assistantContent)
                     
-                    setMessages(prev => 
-                      prev.map(msg => 
-                        msg.id === assistantMessageId 
+                    setMessages(prev =>
+                      prev.map(msg =>
+                        msg.id === assistantMessageId
                           ? { ...msg, content: formattedContent, sqlQuery: data.sqlQuery }
                           : msg
                       )
@@ -183,9 +256,9 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
 
         if (!assistantContent) {
           assistantContent = 'I processed your request but couldn\'t generate a response.'
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === assistantMessageId 
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMessageId
                 ? { ...msg, content: assistantContent, sqlQuery: undefined }
                 : msg
             )
@@ -199,11 +272,22 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
           role: 'assistant',
           content: data.response || 'I received your message but couldn\'t generate a proper response.',
           timestamp: new Date(),
-          sqlQuery: data.sqlQuery
+          sqlQuery: data.sqlQuery,
         }
 
         setMessages(prev => [...prev, assistantMessage])
       }
+      // Update session updatedAt on any assistant response
+      try {
+        if (sessionId) {
+          setSessions(prev => {
+            const now = new Date().toISOString()
+            const updated = prev.map(s => s.id === sessionId ? { ...s, updatedAt: now } : s)
+            localStorage.setItem(SESSIONS_KEY, JSON.stringify(updated))
+            return updated
+          })
+        }
+      } catch {}
     } catch (err) {
       if (err instanceof Error && err.name !== 'AbortError') {
         console.error('Chat error:', err)
@@ -223,6 +307,32 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
     }
   }, [input, isLoading, streaming, api])
 
+  const startNewSession = useCallback(() => {
+    const newId = crypto.randomUUID()
+    setSessionId(newId)
+    setMessages([])
+    try {
+      localStorage.setItem(ACTIVE_SESSION_KEY, newId)
+      const now = new Date().toISOString()
+      setSessions(prev => {
+        const next = [{ id: newId, title: 'New Chat', createdAt: now, updatedAt: now }, ...prev]
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(next))
+        return next
+      })
+    } catch {}
+  }, [])
+
+  const switchSession = useCallback((id: string) => {
+    setSessionId(id)
+    try {
+      localStorage.setItem(ACTIVE_SESSION_KEY, id)
+      const raw = localStorage.getItem(messagesKeyFor(id))
+      setMessages(raw ? JSON.parse(raw) : [])
+    } catch {
+      setMessages([])
+    }
+  }, [])
+
   return {
     messages,
     input,
@@ -230,6 +340,10 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
     error,
     handleInputChange,
     handleSubmit,
-    clearMessages
+    clearMessages,
+    sessions,
+    activeSessionId: sessionId,
+    startNewSession,
+    switchSession
   }
 } 

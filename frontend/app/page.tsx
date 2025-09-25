@@ -3,6 +3,7 @@ import { useJewelryChat } from "@/hooks/use-jewelry-chat"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Home,
   LayoutGrid,
@@ -30,7 +31,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ChatMessage } from "@/hooks/use-jewelry-chat"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -54,11 +55,17 @@ const navItems = [
 ]
 
 export default function ChatPage() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, clearMessages } = useJewelryChat({
+  const [showQuery, setShowQuery] = useState(false)
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, clearMessages, sessions, activeSessionId, startNewSession, switchSession } = useJewelryChat({
     streaming: true // Enable streaming for token-by-token responses
   })
   
   const router = useRouter()
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isLoading])
 
   const handleCopy = useCallback(async (text: string) => {
     try {
@@ -127,6 +134,20 @@ export default function ChatPage() {
                               <Clipboard className="h-4 w-4" />
                             </Button>
                           )}
+                          {showQuery && message.role !== "user" && message.sqlQuery && (
+                            <div className="mt-2 bg-black/30 border border-white/20 rounded-lg p-3 text-xs font-mono whitespace-pre-wrap relative">
+                              <div className="mb-2 text-white/70">SQL</div>
+                              <pre className="whitespace-pre-wrap break-words">{message.sqlQuery}</pre>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-2 right-2 text-white/50 hover:text-white"
+                                onClick={() => handleCopy(message.sqlQuery!)}
+                              >
+                                <Clipboard className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -167,6 +188,7 @@ export default function ChatPage() {
               <p className="text-red-300 text-sm mt-1">{error}</p>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="px-6 pb-6 flex justify-center">
@@ -204,7 +226,36 @@ export default function ChatPage() {
       <aside className="hidden lg:flex flex-col w-80 p-6">
         <div className="bg-black/20 rounded-2xl flex-1 flex flex-col p-6">
           
+          {/* Show Query Toggle */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="show-query"
+              checked={showQuery}
+              onCheckedChange={(v) => setShowQuery(!!v)}
+              className="data-[state=checked]:bg-emerald-600 border-white/40"
+            />
+            <label htmlFor="show-query" className="text-sm select-none">Show Query</label>
+          </div>
           
+          {/* Chats */}
+          <div className="mt-4">
+            <div className="text-sm text-white/70 mb-2">Chats</div>
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {sessions.map((s) => (
+                <Button
+                  key={s.id}
+                  className={cn("w-full justify-start rounded-lg", s.id === activeSessionId ? "bg-emerald-600 hover:bg-emerald-700" : "bg-gray-700/60 hover:bg-gray-700")}
+                  onClick={() => switchSession(s.id)}
+                >
+                  <span className="truncate">{s.title || 'New Chat'}</span>
+                </Button>
+              ))}
+              {sessions.length === 0 && (
+                <div className="text-xs text-white/60">No chats yet</div>
+              )}
+            </div>
+          </div>
+
           {/* Navigation Buttons */}
           <div className="mt-4 space-y-2">
             <Button 
@@ -225,7 +276,7 @@ export default function ChatPage() {
           
           <Button 
             className="w-full mt-4 bg-white/90 hover:bg-white text-black font-bold rounded-lg"
-            onClick={clearMessages}
+            onClick={startNewSession}
           >
             <Plus className="mr-2 h-4 w-4" />
             New Chat
