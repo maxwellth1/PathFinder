@@ -82,15 +82,15 @@ body {
   /* Two radial gradients - one top left, one bottom right */
   background-image: radial-gradient(
       circle at 15% 15%,
-      rgba(79, 70, 255, 0.3) 0%,
-      rgba(79, 70, 255, 0.1) 25%,
+      rgba(82, 242, 98, 0.342) 0%,
+      rgba(50, 249, 77, 0.171) 25%,
       transparent 50%
     ),
     radial-gradient(
       circle at 85% 85%,
-      rgba(59, 130, 246, 0.6) 0%,
-      rgba(79, 70, 255, 0.3) 25%,
-      rgba(99, 102, 241, 0.15) 40%,
+      rgba(34, 244, 65, 0.397) 0%,
+      rgba(41, 245, 51, 0.24) 25%,
+      rgba(27, 234, 61, 0.164) 40%,
       transparent 65%
     );
 
@@ -121,7 +121,7 @@ body {
 
 .chat-input-bar {
   background: linear-gradient(#090017, #040012);
-  border: 1px solid rgba(128, 128, 255, 0.25);
+  border: 1px solid rgba(128, 255, 147, 0.25);
 }
 
 /* Custom scrollbar styling for chat area */
@@ -148,4 +148,34 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(59, 130, 246, 0.6) rgba(31, 31, 31, 0.3);
+}
+
+/* Chart Container Styles */
+.chart-container {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.chart-container iframe {
+  display: block;
+  width: 100%;
+  height: 450px;
+  border: none;
+  border-radius: 4px;
+  background: white;
+}
+
+/* Responsive chart sizing */
+@media (max-width: 768px) {
+  .chart-container {
+    padding: 0.5rem;
+  }
+  
+  .chart-container iframe {
+    height: 350px;
+  }
 }
