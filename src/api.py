@@ -93,8 +93,14 @@ class JewelryChatbotAPI:
             )
             answer = agent_response.get("answer", "")
             sql_query = agent_response.get("sql_query", "")
+            chart_html = agent_response.get("chart_html", None)
 
-            return {"response": answer, "sqlQuery": sql_query, "status": "success"}
+            result = {"response": answer, "sqlQuery": sql_query, "status": "success"}
+            
+            if chart_html:
+                result["chartHtml"] = chart_html
+            
+            return result
 
         except HTTPException:
             # Re-raise HTTP exceptions
@@ -129,9 +135,20 @@ class JewelryChatbotAPI:
             )
             answer = agent_response.get("answer", "")
             sql_query = agent_response.get("sql_query", "")
+            chart_html = agent_response.get("chart_html", None)
 
             # Send the final response
-            yield f"data: {json.dumps({'response': answer, 'sqlQuery': sql_query, 'status': 'completed'})}\n\n"
+            response_data = {
+                'response': answer, 
+                'sqlQuery': sql_query, 
+                'status': 'completed'
+            }
+            
+            # Add chart if generated
+            if chart_html:
+                response_data['chartHtml'] = chart_html
+            
+            yield f"data: {json.dumps(response_data)}\n\n"
 
         except HTTPException as e:
             yield f"data: {json.dumps({'error': e.detail, 'status': 'error'})}\n\n"

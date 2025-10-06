@@ -8,6 +8,7 @@ export interface ChatMessage {
   content: string
   timestamp: Date
   sqlQuery?: string
+  chartHtml?: string
 }
 
 export interface UseChatOptions {
@@ -236,7 +237,12 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
                     setMessages(prev =>
                       prev.map(msg =>
                         msg.id === assistantMessageId
-                          ? { ...msg, content: formattedContent, sqlQuery: data.sqlQuery }
+                          ? { 
+                              ...msg, 
+                              content: formattedContent, 
+                              sqlQuery: data.sqlQuery,
+                              chartHtml: data.chartHtml
+                            }
                           : msg
                       )
                     )
@@ -274,6 +280,7 @@ export function useJewelryChat(options: UseChatOptions = {}): UseChatReturn {
           content: data.response || 'I received your message but couldn\'t generate a proper response.',
           timestamp: new Date(),
           sqlQuery: data.sqlQuery,
+          chartHtml: data.chartHtml,
         }
 
         setMessages(prev => [...prev, assistantMessage])

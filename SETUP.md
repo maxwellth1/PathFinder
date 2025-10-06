@@ -18,6 +18,10 @@ db_uri=mssql+pyodbc://localhost/YourDatabaseName?driver=ODBC+Driver+17+for+SQL+S
 # Alternative SQL Server connection with username/password:
 # db_uri=mssql+pyodbc://username:password@localhost\\SQLEXPRESS/YourDatabaseName?driver=ODBC+Driver+17+for+SQL+Server
 
+# Remote SQL Server connection (different computer):
+# db_uri=mssql+pyodbc://sa:MTL%40ndis2025%21@10.1.4.102\SQLEXPRESS,1433/data.gov?driver=ODBC+Driver+17+for+SQL+Server
+# Note: Special characters in password must be URL-encoded (@ = %40, ! = %21)
+
 # Frontend Configuration (optional)
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
