@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Health Check Test Suite for Zivo Jewelry Chatbot
+Health Check Test Suite for Path Finder Chatbot
 Tests both FastAPI backend and Next.js frontend to ensure proper functionality
 """
 

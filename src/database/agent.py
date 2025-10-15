@@ -161,7 +161,7 @@ ORDER BY Make, Model_Year;
     # Generate chart if requested
     chart_html = None
     try:
-        from .echarts_generator import generate_chart_for_query
+        from .echarts import generate_chart_for_query
         chart_html = generate_chart_for_query(question, sql_query, query_result, ctx)
         if chart_html:
             print("Chart generated successfully")
