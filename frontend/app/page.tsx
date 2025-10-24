@@ -36,6 +36,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import '@/styles/markdown.css'
+import Image from 'next/image'
 
 const navItems = [
   { icon: Home, label: "Home" },
@@ -73,7 +74,10 @@ export default function ChatPage() {
       {/* Main Chat Panel */}
       <main className="flex-1 flex flex-col">
         <header className="flex items-center justify-between p-4 border-b border-white/10">
-          <h1 className="text-xl font-semibold">Path Finder</h1>
+          <div className="flex items-center gap-3">
+            <Image src="/landisgyr-logo-transparent.png" alt="Landis+Gyr" width={28} height={28} className="rounded-sm" />
+            <h1 className="text-xl font-semibold">Path Finder</h1>
+          </div>
           <Avatar>
           </Avatar>
         </header>
@@ -105,7 +109,7 @@ export default function ChatPage() {
                         <div
                           className={cn(
                             "rounded-xl px-4 py-3 text-sm",
-                            message.role === "user" ? "bg-blue-600 text-white" : "bg-transparent",
+                            message.role === "user" ? "bg-green-600 text-white" : "bg-transparent",
                           )}
                         >
                           <div className="markdown-container">
@@ -143,9 +147,9 @@ export default function ChatPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="bg-black/20 rounded-xl px-4 py-3 text-sm flex items-center">
-                      <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s] mr-1"></div>
-                      <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s] mr-1"></div>
-                      <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce"></div>
+                      <div className="h-2 w-2 bg-green-400 rounded-full animate-bounce [animation-delay:-0.3s] mr-1"></div>
+                      <div className="h-2 w-2 bg-green-400 rounded-full animate-bounce [animation-delay:-0.15s] mr-1"></div>
+                      <div className="h-2 w-2 bg-green-400 rounded-full animate-bounce"></div>
                     </div>
                   </div>
                 )}
@@ -204,7 +208,7 @@ export default function ChatPage() {
           {/* Navigation Buttons */}
           <div className="mt-4 space-y-2">
             <Button 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
               disabled
             >
               <Database className="mr-2 h-4 w-4" />
