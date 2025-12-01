@@ -37,7 +37,6 @@ import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import '@/styles/markdown.css'
 import PlotlyChart from '@/components/ui/plotly-chart'
-import Image from 'next/image'
 
 
 const navItems = [
@@ -194,10 +193,7 @@ export default function SpreadsheetPage() {
       <main className="flex-1 flex flex-col">
         <header className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center space-x-3">
-            <div className="flex items-center gap-3">
-              <Image src="/landisgyr-logo-transparent.png" alt="Landis+Gyr" width={500} height={500} className="rounded-sm" />
-              <h1 className="text-xl font-semibold">Spreadsheet Analysis</h1>
-            </div>
+            <h1 className="text-xl font-semibold">Spreadsheet Analysis</h1>
             {uploadedFile && (
               <div className="flex items-center space-x-2 text-sm text-gray-400">
                 <FileSpreadsheet className="h-4 w-4" />
@@ -242,7 +238,7 @@ export default function SpreadsheetPage() {
                           <div
                             className={cn(
                               "rounded-xl px-4 py-3 text-sm relative",
-                              message.role === "user" ? "bg-green-600 text-white" : "bg-black/20",
+                              message.role === "user" ? "bg-blue-600 text-white" : "bg-black/20",
                             )}
                           >
                             <div className="markdown-container">
@@ -281,9 +277,9 @@ export default function SpreadsheetPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="bg-black/20 rounded-xl px-4 py-3 text-sm flex items-center">
-                        <div className="h-2 w-2 bg-green-400 rounded-full animate-bounce [animation-delay:-0.3s] mr-1"></div>
-                        <div className="h-2 w-2 bg-green-400 rounded-full animate-bounce [animation-delay:-0.15s] mr-1"></div>
-                        <div className="h-2 w-2 bg-green-400 rounded-full animate-bounce"></div>
+                        <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s] mr-1"></div>
+                        <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s] mr-1"></div>
+                        <div className="h-2 w-2 bg-blue-400 rounded-full animate-bounce"></div>
                       </div>
                     </div>
                   )}
