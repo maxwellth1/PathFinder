@@ -38,50 +38,6 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import '@/styles/markdown.css'
-import Image from 'next/image'
-
-interface ChartDisplayProps {
-  htmlContent: string
-}
-
-function ChartDisplay({ htmlContent }: ChartDisplayProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  
-  useEffect(() => {
-    if (iframeRef.current) {
-      const iframe = iframeRef.current
-      const doc = iframe.contentDocument || iframe.contentWindow?.document
-      if (doc) {
-        doc.open()
-        doc.write(htmlContent)
-        doc.close()
-      }
-    }
-  }, [htmlContent])
-  
-  return (
-    <div className="chart-container" style={{
-      marginTop: '1rem',
-      padding: '1rem',
-      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-      borderRadius: '8px',
-      border: '1px solid rgba(255, 255, 255, 0.2)'
-    }}>
-      <iframe
-        ref={iframeRef}
-        style={{
-          width: '100%',
-          height: '450px',
-          border: 'none',
-          borderRadius: '4px',
-          backgroundColor: 'white'
-        }}
-        sandbox="allow-scripts allow-same-origin"
-        title="ECharts Visualization"
-      />
-    </div>
-  )
-}
 
 const navItems = [
   { icon: Home, label: "Home" },
@@ -125,10 +81,7 @@ export default function ChatPage() {
       {/* Main Chat Panel */}
       <main className="flex-1 flex flex-col">
         <header className="flex items-center justify-between p-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <Image src="/landisgyr-logo-transparent.png" alt="Landis+Gyr" width={120} height={120} className="rounded-sm w-[84px] h-[84px] md:w-[96px] md:h-[96px] lg:w-[120px] lg:h-[120px]" />
-            <h1 className="text-xl font-semibold">Path Finder</h1>
-          </div>
+          <h1 className="text-xl font-semibold">Path Finder</h1>
           <Avatar>
           </Avatar>
         </header>
