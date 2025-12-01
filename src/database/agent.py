@@ -132,11 +132,46 @@ ORDER BY Make, Model_Year;
     result = agent.invoke({"messages": [HumanMessage(content=question)]}, config)
     final_message = result["messages"][-1].content
 
-    # Extract the SQL query from the agent's response
+    # Extract the SQL query and results from the agent's response
     sql_query = ""
-    for step in result.get("intermediate_steps", []):
-        if "sql_cmd" in step:
-            sql_query = step["sql_cmd"]
-            break
+    query_result = None
+    
+    # Try to extract SQL query and results from tool calls and responses
+    for message in result["messages"]:
+        # Extract SQL query from tool calls
+        if hasattr(message, "tool_calls") and message.tool_calls:
+            for tool_call in message.tool_calls:
+                if "query" in tool_call.get("args", {}):
+                    sql_query = tool_call["args"]["query"]
+        
+        # Extract actual query results from ToolMessage responses
+        if hasattr(message, "artifact") and message.artifact:
+            # The artifact contains the actual query results
+            query_result = message.artifact
+        elif message.__class__.__name__ == "ToolMessage":
+            # Try to parse the tool message content
+            try:
+                content = message.content
+                # If it's a string representation of results, try to parse it
+                if isinstance(content, str) and content.strip():
+                    query_result = content
+            except Exception:
+                pass
 
-    return {"answer": final_message, "sql_query": sql_query}
+    # Generate chart if requested
+    chart_html = None
+    try:
+        from .echarts import generate_chart_for_query
+        chart_html = generate_chart_for_query(question, sql_query, query_result, ctx)
+        if chart_html:
+            print("Chart generated successfully")
+    except Exception as e:
+        print(f"Error generating chart: {e}")
+        import traceback
+        traceback.print_exc()
+
+    return {
+        "answer": final_message, 
+        "sql_query": sql_query,
+        "chart_html": chart_html
+    }

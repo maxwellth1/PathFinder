@@ -8,14 +8,23 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+# Ensure UTF-8 output on Windows consoles to support emoji/log symbols
+if os.name == "nt":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
+
 def start_backend():
     """Start the FastAPI backend server"""
     print("🐍 Starting FastAPI backend server...")
-    os.chdir("src")
     try:
         subprocess.run([
             sys.executable, "-m", "uvicorn", 
-            "api:app", 
+            "src.api:app", 
             "--host", "127.0.0.1", 
             "--port", "8000", 
             "--reload"
@@ -28,11 +37,10 @@ def start_backend():
 def start_frontend():
     """Start the Next.js frontend server"""
     print("⚛️ Starting Next.js frontend server...")
-    os.chdir("frontend")
     try:
         subprocess.run([
             "npm", "run", "dev"
-        ], check=True, shell=True)
+        ], check=True, shell=True, cwd="frontend")
     except KeyboardInterrupt:
         print("\n⚛️ Frontend server stopped")
     except Exception as e:
